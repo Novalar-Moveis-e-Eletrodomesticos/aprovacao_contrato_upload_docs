@@ -1,0 +1,24 @@
+# =============================
+# CONFIGURAÇÃO DO SERVIDOR
+# =============================
+[server]
+headless = true             # Não abre janela gráfica
+port = 8501                 # Porta fixa (muda se já estiver em uso)
+enableCORS = true          # Permite requisições de fora (útil p/ frontend separado)
+enableXsrfProtection = true # Segurança contra ataques CSRF
+fileWatcherType = "poll"    # Modo mais compatível de hot-reload
+runOnSave = true            # Auto-reload ao salvar o código
+
+
+# =============================
+# ACESSO VIA BROWSER
+# =============================
+[browser]
+serverAddress = "0.0.0.0"   # Permite acesso remoto (muda p/ localhost se for local)
+gatherUsageStats = false    # Desativa envio de estatísticas (opcional)
+
+# =============================
+# PERSONALIZAÇÃO DE TEMA
+# =============================
+[theme]
+base = "light"
