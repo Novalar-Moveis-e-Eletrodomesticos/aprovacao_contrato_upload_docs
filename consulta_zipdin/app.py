@@ -14,7 +14,7 @@ else:
     pages = [
         st.Page(
             'src/features/upload_with_validations/upload_with_validations_page.py',
-            title='Upload Imagens (SOMENTE TESTE)',
+            title='Upload Imagens',
             icon=':material/upload:'
         ),
         # st.Page(

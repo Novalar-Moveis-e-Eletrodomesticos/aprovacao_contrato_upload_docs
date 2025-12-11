@@ -62,21 +62,34 @@ def busca_contrato():
     # 🔍 Busca contrato
     try:
         with st.spinner("Buscando contrato..."):
-            contrato_data = BuscaContratoController.fetchBuscaContrato(
-                pedido=int(pedido),
-                filialid=int(codfil)
-            )
+            # contrato_data = BuscaContratoController.fetchBuscaContrato(
+            #     pedido=int(pedido),
+            #     filialid=int(codfil)
+            # )
+            contrato_data = None
+            if contrato_data is None:
+                contrato_data_2 = BuscaContratoController.fetchBuscaContratoBase(
+                    pedido=pedido,
+                    filial=codfil
+                )
+                
     except Exception as e:
         st.error(f"Erro ao buscar contrato: {e}")
         st.stop()
-
-    if not contrato_data or not contrato_data.get("retorno"):
+        
+    if contrato_data:
+        informacoes = contrato_data["retorno"][0]
+        contrato_str = informacoes.get("contratozd", "")
+        cpf_cnpj = informacoes.get("cnpj_cpf", "")
+    
+    if contrato_data_2:
+        informacoes = contrato_data_2[0]
+        contrato_str = informacoes[4]
+        cpf_cnpj = informacoes[3]
+    
+    if not contrato_data and not contrato_data_2:
         st.warning("Pedido não encontrado ou sem contrato associado.")
         st.stop()
-
-    informacoes = contrato_data["retorno"][0]
-    contrato_str = informacoes.get("contratozd", "")
-    cpf_cnpj = informacoes.get("cnpj_cpf", "")
 
     if not contrato_str:
         st.warning("Nenhum contrato PDF associado a este pedido.")

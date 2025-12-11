@@ -13,7 +13,7 @@ class UploadWithValidationService:
             "content-type": "application/json"
         }
         data = {
-            "idfiltro": 90087,
+            "idfiltro": 10289,
             "idcontexto": 2,
             "parametros": [
                 {"parametro": "idfilial", "valorparametro": v_idfilial},
@@ -37,7 +37,7 @@ class UploadWithValidationService:
             "content-type": "application/json"
         }
         data = {
-            "idfiltro": 90088,
+            "idfiltro": 10290,
             "idcontexto": 2,
             "parametros": [
                 {"parametro": "idusuario","valorparametro": st.session_state["user"][0][0]["idusuario"]},

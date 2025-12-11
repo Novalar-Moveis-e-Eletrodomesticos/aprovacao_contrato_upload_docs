@@ -219,7 +219,7 @@ def portalAprovacao(doc_value, contrato_value):
     exibirArquivo(self_image, 'Selfie')
 
     st.divider()
-    #observacao = st.text_input("Digite uma observação:")
+    observacao = st.text_input("Digite uma observação:")
 
 
     
@@ -255,7 +255,7 @@ def portalAprovacao(doc_value, contrato_value):
             if(count_success == 3):
                 status = alterar_status(id_proposta)
                 if status is True:
-                    UploadWithValidationsController.fecharPedido(v_contrato=contrato_value,v_status='S',v_obs='')
+                    UploadWithValidationsController.fecharPedido(v_contrato=contrato_value,v_status='S',v_obs=observacao)
                     st.rerun()
                 else:
                     st.error('Erro ao fechar pedido')
