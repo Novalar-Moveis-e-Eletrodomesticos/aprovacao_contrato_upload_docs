@@ -9,7 +9,7 @@ from src.features.login.login_page import loginPage
 from common.sabium.sabium import sabium
 from src.widgets.sidebar import sidebarFunction
 import filetype
-
+import time
 
 
 import datetime
@@ -271,16 +271,38 @@ def portalAprovacao(doc_value, contrato_value):
                     if status == HTTPStatus.OK:
                         count_success += 1
 
-            if count_success == 3:
-                status = alterar_status(id_proposta)
-                if status is True:
-                    log.info('Ele entrou para fechar pedido')
-                    UploadWithValidationsController.fecharPedido(v_contrato=contrato_value, v_status='S', v_obs=observacao)
-                    st.session_state.should_rerun = True  # Marca que o rerun deve acontecer
+            # if count_success == 3:
+            #     status = alterar_status(id_proposta)
+            #     if status is True:
+            #         log.info('Ele entrou para fechar pedido')
+            #         UploadWithValidationsController.fecharPedido(v_contrato=contrato_value, v_status='S', v_obs=observacao)
+            #         st.session_state.should_rerun = True  # Marca que o rerun deve acontecer
+            #     else:
+            #         st.error('Erro ao fechar pedido')
+            # else:
+            #     st.error('Erro no upload de algum documento.')
+            max_retries = 3
+            retries = 0
+            success = False
+            response = None
+
+            while retries < max_retries and response is None:
+                # Tenta fechar o pedido
+                response = UploadWithValidationsController.fecharPedido(v_contrato=contrato_value, v_status='S', v_obs=observacao)
+                
+                if response is not None:
+                    success = True
+                    log.info('Fechamento de pedido bem-sucedido.')
                 else:
-                    st.error('Erro ao fechar pedido')
+                    retries += 1
+                    time.sleep(2)  # Espera 2 segundos antes de tentar novamente
+
+            if success:
+                # Se foi bem-sucedido, marca para o rerun acontecer
+                st.session_state.should_rerun = True  # Marca que o rerun deve acontecer
             else:
-                st.error('Erro no upload de algum documento.')
+                # Se falhou 3 vezes, exibe erro
+                st.error('Falha ao tentar fechar pedido após 3 tentativas.')
 
 
     # Condição para fazer o rerun se necessário
