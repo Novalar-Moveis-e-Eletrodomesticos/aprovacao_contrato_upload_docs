@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 from common.zipdin.api_zipdin import get_protected_data
 from common.sabium.sabium import Sabium
+from common.generic.log import setup_logging
+
+log = setup_logging()
 
 class UploadWithValidationService:
     def fetch_consulta(v_idusuario,v_idfilial):
@@ -29,6 +32,7 @@ class UploadWithValidationService:
             return None
     
     def baixar_venda(contrato,status,obs):
+        log.info('entrou em def baixar_venda')
         url_base = st.secrets['PRODUCAO']
         url = f"{url_base}/v3/executar_filtro"
         headers = {
@@ -46,11 +50,16 @@ class UploadWithValidationService:
                 {"parametro": "obsaprovacao","valorparametro": obs}
             ]
         } 
-
+        log.info('==================================================')
+        log.info(f'url: {url}')
+        log.info(f'headers: {headers}')
+        log.info(f'data: {data}')
+        log.info('==================================================')
         response = requests.post(url, headers=headers, json=data)
-
+        log.info(response)
         if response.status_code == 200:
-
+            log.info('response entrou no status 200')
+            log.info(response.json())
             return response.json()
         else:
             return None

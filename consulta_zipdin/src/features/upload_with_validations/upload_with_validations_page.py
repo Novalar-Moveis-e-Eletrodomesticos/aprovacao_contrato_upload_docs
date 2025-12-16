@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from common.generic.function import request_with_retries, save_token
+from common.generic.log import setup_logging
 from src.features.upload_with_validations.upload_with_validations_controller import UploadWithValidationsController
 from src.features.login.login_page import loginPage
 from common.sabium.sabium import sabium
@@ -21,6 +22,8 @@ import urllib
 if 'should_rerun' not in st.session_state:
     st.session_state.should_rerun = False
 
+
+log = setup_logging()
 
 def default_converter(obj):
     if isinstance(obj, datetime):
@@ -104,7 +107,7 @@ def alterar_status(idproposta):
 
         if (executar_filtro.status_code == HTTPStatus.OK or 
             executar_filtro.status_code == HTTPStatus.NO_CONTENT):
-            
+            log.info('Conseguiu alterar o status')
             return True
     
 
@@ -161,10 +164,10 @@ def enviar_imagem(cpf_cnpj, id_proposta, file_image, docType, token):
             raise ValueError("Arquivo não suportado. Apenas imagens e PDFs são permitidos.")
     
     except requests.exceptions.RequestException as e:
-        print(f"Erro ao enviar a imagem: {e}")
+        log.error(f"Erro ao enviar a imagem: {e}")
         return None
     except ValueError as ve:
-        print(ve)
+        log.error(ve)
         return None
 
 
@@ -271,7 +274,7 @@ def portalAprovacao(doc_value, contrato_value):
             if count_success == 3:
                 status = alterar_status(id_proposta)
                 if status is True:
-                
+                    log.info('Ele entrou para fechar pedido')
                     UploadWithValidationsController.fecharPedido(v_contrato=contrato_value, v_status='S', v_obs=observacao)
                     st.session_state.should_rerun = True  # Marca que o rerun deve acontecer
                 else:
