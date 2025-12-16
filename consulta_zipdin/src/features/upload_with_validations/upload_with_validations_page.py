@@ -18,6 +18,9 @@ import requests
 import urllib
 #from common.zipdin.api_zipdin import get_access_token
 
+if 'should_rerun' not in st.session_state:
+    st.session_state.should_rerun = False
+
 
 def default_converter(obj):
     if isinstance(obj, datetime):
@@ -101,6 +104,7 @@ def alterar_status(idproposta):
 
         if (executar_filtro.status_code == HTTPStatus.OK or 
             executar_filtro.status_code == HTTPStatus.NO_CONTENT):
+            
             return True
     
 
@@ -125,7 +129,7 @@ def enviar_imagem(cpf_cnpj, id_proposta, file_image, docType, token):
                 'idProposal': id_proposta,
                 'cpfCnpj': cpf_cnpj,
             }
-            url = 'https://hml.zipdin.com.br/zipcred/services/formalizationCdc/uploadWithValidations'
+            url = 'https://api-zipcred.zipdin.com.br/zipcred/services/formalizationCdc/uploadWithValidations'
             headers = {
                 "Authorization": f"Bearer {token}",
             }
@@ -146,7 +150,7 @@ def enviar_imagem(cpf_cnpj, id_proposta, file_image, docType, token):
                 'cpfCnpj': cpf_cnpj,
             }
 
-            url = 'https://hml.zipdin.com.br/zipcred/services/formalizationCdc/uploadWithValidations'  # URL hipotética para PDF
+            url = 'https://api-zipcred.zipdin.com.br/zipcred/services/formalizationCdc/uploadWithValidations'  # URL hipotética para PDF
             headers = {
                 "Authorization": f"Bearer {token}",
             }
@@ -174,20 +178,30 @@ def processar_imagens(cpf_cnpj, id_proposta, imagens, token):
 
             if response and response.status_code == 200:
                 st.success(f'Imagem {docType} enviada com sucesso!')
-                resultados[docType] = response.json()
+                resultados[docType] = response.json()  # Armazenando a resposta em formato JSON
             else:
-                error_json = response.text
-                resultados[docType] = error_json
-                
-                if error_json is not None and error_json != '':
-                    if error_json['error']['message'] == 'Limite de documentos excedido':
-                        st.error(f'Arquivo {docType} já enviado.')
+                try:
+                    # Tenta converter o texto da resposta para um dicionário JSON
+                    error_json = response.json() if response.status_code != 200 else {}
+                except ValueError:
+                    # Se não for possível converter para JSON, considera a resposta como texto
+                    error_json = {}
+
+                # Se houver algum erro, trata a mensagem de erro
+                if error_json:
+                    if 'error' in error_json and 'message' in error_json['error']:
+                        if error_json['error']['message'] == 'Limite de documentos excedido':
+                            st.error(f'Arquivo {docType} já enviado.')
+                        else:
+                            st.error(f'Erro ao enviar {docType}. Mensagem: {error_json["error"]["message"]}')
                     else:
                         st.error(f'Erro ao enviar {docType}. Status: {response.text}')
                 else:
                     st.error(f'Erro ao enviar {docType}. Status: {response.text}')
+
         else:
             st.warning(f'Imagem {docType} não foi fornecida.')
+    
     return resultados
 
 def exibirArquivo(file, mensagem):
@@ -199,8 +213,10 @@ def exibirArquivo(file, mensagem):
         elif kind.mime == 'application/pdf':
             st.pdf(file, height=300, key=f'{file.name}-{datetime.datetime.now()}')
 
-def portalAprovacao(doc_value, contrato_value):
 
+
+
+def portalAprovacao(doc_value, contrato_value):
     # Dados do usuário
     cpf_cnpj = st.text_input('CPF ou CNPJ:', value=doc_value, disabled=True)
     id_proposta = st.text_input('ID da proposta:', value=contrato_value, disabled=True)
@@ -221,9 +237,6 @@ def portalAprovacao(doc_value, contrato_value):
     st.divider()
     observacao = st.text_input("Digite uma observação:")
 
-
-    
-
     # Submissão
     if st.button('Enviar'):
         if cpf_cnpj and id_proposta and frente and verso and self_image:
@@ -239,33 +252,38 @@ def portalAprovacao(doc_value, contrato_value):
 
             # Processar e enviar as imagens
             resultados = processar_imagens(cpf_cnpj, id_proposta, imagens, token)
-            
 
             count_success = 0
+        
             for _, result in resultados.items():
-                if result.get('error') != None:
-                    if result['error']['message'] == 'Limite de documentos excedido':
+                # Acessando o erro de forma segura
+                error = result.get('data', {}).get('results', {}).get('error', None)
+
+                if error:
+                    if error.get('message') == 'Limite de documentos excedido':
                         count_success += 1
-                # if result.get('error') == None:
                 else:
-                    status = result['data']['results']['status']
-                    if(status == HTTPStatus.OK):
+                    status = result.get('data', {}).get('results', {}).get('status', None)
+                    
+                    if status == HTTPStatus.OK:
                         count_success += 1
 
-            if(count_success == 3):
+            if count_success == 3:
                 status = alterar_status(id_proposta)
                 if status is True:
-                    UploadWithValidationsController.fecharPedido(v_contrato=contrato_value,v_status='S',v_obs=observacao)
-                    st.rerun()
+                
+                    UploadWithValidationsController.fecharPedido(v_contrato=contrato_value, v_status='S', v_obs=observacao)
+                    st.session_state.should_rerun = True  # Marca que o rerun deve acontecer
                 else:
                     st.error('Erro ao fechar pedido')
-            
-
-        else:
-            st.error('Por favor, preencha todos os campos e faça o upload das imagens.')
+            else:
+                st.error('Erro no upload de algum documento.')
 
 
-
+    # Condição para fazer o rerun se necessário
+    if getattr(st.session_state, 'should_rerun', False):
+        st.session_state.should_rerun = False  # Reseta o flag
+        st.rerun()
 
 
 
@@ -369,3 +387,4 @@ def consultaPage():
         st.write('Sem nenhum contrato para validação')
 
 consultaPage()
+

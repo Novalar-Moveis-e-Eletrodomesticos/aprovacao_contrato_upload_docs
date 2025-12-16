@@ -48,7 +48,9 @@ class UploadWithValidationService:
         } 
 
         response = requests.post(url, headers=headers, json=data)
+
         if response.status_code == 200:
+
             return response.json()
         else:
             return None
